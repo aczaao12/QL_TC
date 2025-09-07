@@ -14,6 +14,86 @@ declare global {
   interface Window {
     webkitSpeechRecognition: typeof SpeechRecognition;
   }
+  interface SpeechRecognition extends EventTarget {
+    grammars: SpeechGrammarList;
+    lang: string;
+    continuous: boolean;
+    interimResults: boolean;
+    maxAlternatives: number;
+    serviceURI: string;
+    onaudiostart: (this: SpeechRecognition, ev: Event) => void;
+    onaudioend: (this: SpeechRecognition, ev: Event) => void;
+    onend: (this: SpeechRecognition, ev: Event) => void;
+    onerror: (this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => void;
+    onnomatch: (this: SpeechRecognition, ev: SpeechRecognitionEvent) => void;
+    onresult: (this: SpeechRecognition, ev: SpeechRecognitionEvent) => void;
+    onsoundstart: (this: SpeechRecognition, ev: Event) => void;
+    onsoundend: (this: SpeechRecognition, ev: Event) => void;
+    onspeechstart: (this: SpeechRecognition, ev: Event) => void;
+    onspeechend: (this: SpeechRecognition, ev: Event) => void;
+    onstart: (this: SpeechRecognition, ev: Event) => void;
+    abort(): void;
+    start(): void;
+    stop(): void;
+  }
+  var SpeechRecognition: {
+    prototype: SpeechRecognition;
+    new(): SpeechRecognition;
+  };
+
+  interface SpeechRecognitionEvent extends Event {
+    readonly resultIndex: number;
+    readonly results: SpeechRecognitionResultList;
+  }
+  var SpeechRecognitionEvent: {
+    prototype: SpeechRecognitionEvent;
+    new(type: string, eventInitDict: SpeechRecognitionEventInit): SpeechRecognitionEvent;
+  };
+
+  interface SpeechRecognitionEventInit extends EventInit {
+    resultIndex?: number;
+    results: SpeechRecognitionResultList;
+  }
+
+  interface SpeechRecognitionErrorEvent extends Event {
+    readonly error: SpeechRecognitionErrorCode;
+    readonly message: string;
+  }
+  var SpeechRecognitionErrorEvent: {
+    prototype: SpeechRecognitionErrorEvent;
+    new(type: string, eventInitDict: SpeechRecognitionErrorEventInit): SpeechRecognitionErrorEvent;
+  };
+
+  interface SpeechRecognitionErrorEventInit extends EventInit {
+    error: SpeechRecognitionErrorCode;
+    message?: string;
+  }
+
+  type SpeechRecognitionErrorCode = 
+    "no-speech" |
+    "aborted" |
+    "audio-capture" |
+    "network" |
+    "not-allowed" |
+    "service-not-allowed" |
+    "bad-grammar" |
+    "language-not-supported";
+
+  interface SpeechGrammar {
+    src: string;
+    weight: number;
+  }
+
+  interface SpeechGrammarList {
+    readonly length: number;
+    addFromString(string: string, weight?: number): void;
+    addFromURI(uri: string, weight?: number): void;
+    item(index: number): SpeechGrammar;
+  }
+  var SpeechGrammarList: {
+    prototype: SpeechGrammarList;
+    new(): SpeechGrammarList;
+  };
 }
 
 const getHoChiMinhDateString = () => {
@@ -36,6 +116,8 @@ export default function AddTransactionPage() {
   const [manualType, setManualType] = useState<string>('chi');
   const [manualAmount, setManualAmount] = useState<number>(0);
   const [manualNote, setManualNote] = useState<string>('');
+  const [manualAccount, setManualAccount] = useState<string>('Tiền mặt'); // New state for account
+  const [manualProjectGoal, setManualProjectGoal] = useState<string>(''); // New state for project/goal
 
   const handleParse = async () => {
     setLoading(true);
@@ -117,6 +199,8 @@ export default function AddTransactionPage() {
       loai: manualType,
       so_tien: manualAmount,
       ghichu: manualNote,
+      tai_khoan: manualAccount,
+      du_an_muc_tieu: manualProjectGoal,
     };
     await handleSave(newTransaction);
   };
@@ -271,6 +355,31 @@ export default function AddTransactionPage() {
               className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               value={manualNote}
               onChange={(e) => setManualNote(e.target.value)}
+            />
+          </div>
+          <div>
+            <label htmlFor="manualAccount" className="block text-sm font-medium text-gray-700">Tài khoản / Ví</label>
+            <select
+              id="manualAccount"
+              className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              value={manualAccount}
+              onChange={(e) => setManualAccount(e.target.value)}
+            >
+              <option value="Tiền mặt">Tiền mặt</option>
+              <option value="Ngân hàng">Ngân hàng</option>
+              <option value="Ví điện tử">Ví điện tử</option>
+              <option value="Khác">Khác</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="manualProjectGoal" className="block text-sm font-medium text-gray-700">Dự án / Mục tiêu</label>
+            <input
+              type="text"
+              id="manualProjectGoal"
+              className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              value={manualProjectGoal}
+              onChange={(e) => setManualProjectGoal(e.target.value)}
+              placeholder="Ví dụ: Dự án A, Tiết kiệm mua nhà"
             />
           </div>
         </div>

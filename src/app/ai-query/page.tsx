@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getAllGiaoDich, GiaoDich } from '@/services/db';
+import ReactMarkdown from 'react-markdown';
 
 const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
 const genAI = new GoogleGenerativeAI(API_KEY);
@@ -79,9 +80,9 @@ AI Response:`;
       )}
 
       {aiResponse && (
-        <div className="mt-6 p-4 border rounded-md bg-gray-50 whitespace-pre-wrap">
+        <div className="mt-6 p-4 border rounded-md bg-gray-50">
           <h2 className="text-xl font-semibold mb-3">Phản hồi từ AI:</h2>
-          <p>{aiResponse}</p>
+          <ReactMarkdown>{aiResponse}</ReactMarkdown>
         </div>
       )}
     </div>

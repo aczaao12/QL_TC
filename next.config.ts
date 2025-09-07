@@ -1,13 +1,8 @@
 import type { NextConfig } from "next";
-import withPWA from "next-pwa";
 
 const nextConfig: NextConfig = {
+  output: 'export',
   /* config options here */
 };
 
-export default withPWA({
-  dest: "public",
-  register: true,
-  skipWaiting: true,
-  customWorkerDir: "src", // Point to the directory containing firebase-messaging-sw.js
-})(nextConfig);
+module.exports = nextConfig;
