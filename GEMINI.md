@@ -2,6 +2,37 @@
 
 These guidelines define the operational principles and capabilities of an AI agent (e.g., Gemini) interacting with Next.js projects within the Firebase Studio environment. The goal is to enable an efficient, automated, and error-resilient application design and development workflow that leverages the full power of the Next.js framework.
 
+## **Project Overview: PWA Quản lý Tiền có AI**
+
+This project is a Progressive Web Application (PWA) for personal money management, enhanced with AI capabilities. The application aims to provide an intuitive and efficient way for users to track their income and expenses, offering insights and suggestions based on their spending habits.
+
+**Key Features:**
+
+*   **Basic Setup:** Next.js project initialization, PWA configuration (manifest.json, service worker), and structured directory setup (`pages/`, `components/`, `store/`, `services/`).
+*   **Data Management (Offline-first):** Utilizes Dexie.js (or IndexedDB API directly) for offline-first data storage. Includes schema design for transactions (`giao_dich { id, ngay, loai, so_tien, ghichu }`) and CRUD operations. Displays transaction lists and spending summaries.
+*   **AI-powered Data Entry:** Integrates Gemini API (via a serverless backend to secure API keys) to parse natural language input into structured JSON transaction data. This allows users to input transactions using conversational text (e.g., "Chi 50k ăn sáng hôm nay" -> `{ "ngay": "2025-09-07", "loai": "ăn uống", "so_tien": 50000, "ghichu": "" }`).
+*   **AI Query & Suggestions:** Leverages Gemini to answer queries based on filtered database data (e.g., "Tháng này tôi chi bao nhiêu tiền cafe?"). Includes a module to fetch relevant data from the DB, feed it into prompts, and receive AI-generated insights and saving suggestions.
+*   **User Interface:**
+    *   **Dashboard:** Overview of income/expenses, charts, and recent transactions.
+    *   **Data Entry Page:** Natural language input (AI-assisted) and manual form fallback.
+    *   **Settings Page:** Budget goals, cloud synchronization options.
+*   **Push Notifications:** Configures Firebase Cloud Messaging (FCM) or Web Push API for daily reminders and budget overrun alerts.
+*   **Synchronization (Optional):** Integrates Firebase Firestore for multi-device data synchronization and conflict resolution.
+*   **Deployment:** Frontend deployment to Vercel/Netlify, backend serverless (Gemini API proxy) to Cloudflare Workers/Firebase Functions. PWA testing for offline functionality and mobile app installation.
+*   **Voice-to-Text Input:** Explores Web Speech API (SpeechRecognition or webkitSpeechRecognition) for native browser-based voice input, offering a serverless solution.
+
+**Technologies:**
+
+*   **Frontend:** Next.js (App Router), React, PWA (manifest.json, service worker), Dexie.js (or IndexedDB).
+*   **Backend (Serverless):** Gemini API, Cloudflare Workers/Firebase Functions.
+*   **Database:** IndexedDB, Firebase Firestore (optional for sync).
+*   **Notifications:** Firebase Cloud Messaging (FCM) or Web Push API.
+*   **Voice Input:** Web Speech API.
+
+## **Environment & Context Awareness**
+
+The AI operates within the Firebase Studio development environment, which provides a Code OSS-based IDE and a pre-configured environment for Next.js development.
+
 ## **Environment & Context Awareness**
 
 The AI operates within the Firebase Studio development environment, which provides a Code OSS-based IDE and a pre-configured environment for Next.js development.
