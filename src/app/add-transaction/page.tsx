@@ -1,9 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { parseTransactionCallable } from '@/services/firebase';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { addGiaoDich, GiaoDich } from '@/services/db';
 import { useRouter } from 'next/navigation';
+
+const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
+const genAI = new GoogleGenerativeAI(API_KEY);
+
 
 // Declare webkitSpeechRecognition for TypeScript
 declare global {
@@ -11,6 +15,13 @@ declare global {
     webkitSpeechRecognition: typeof SpeechRecognition;
   }
 }
+
+const getHoChiMinhDateString = () => {
+  const now = new Date();
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const hoChiMinhDate = new Date(utc + (3600000 * 7));
+  return hoChiMinhDate.toISOString().split('T')[0];
+};
 
 export default function AddTransactionPage() {
   const [inputText, setInputText] = useState<string>('');
@@ -21,7 +32,7 @@ export default function AddTransactionPage() {
   const router = useRouter();
 
   // Manual form state
-  const [manualDate, setManualDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [manualDate, setManualDate] = useState<string>(getHoChiMinhDateString());
   const [manualType, setManualType] = useState<string>('chi');
   const [manualAmount, setManualAmount] = useState<number>(0);
   const [manualNote, setManualNote] = useState<string>('');
@@ -30,17 +41,52 @@ export default function AddTransactionPage() {
     setLoading(true);
     setError(null);
     setParsedTransaction(null);
+    if (!API_KEY) {
+      setError("Gemini API Key is not configured. Please set NEXT_PUBLIC_GEMINI_API_KEY in your .env.local file.");
+      setLoading(false);
+      return;
+    }
     try {
-      const result = await parseTransactionCallable({ text: inputText });
-      const data = result.data as GiaoDich;
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+      const prompt = `Parse the following Vietnamese natural language text into a JSON object representing a financial transaction. The JSON object should have the following structure: { "ngay": "YYYY-MM-DD", "loai": "string", "so_tien": number, "ghichu": "string" }.
+    - 'ngay' should be in YYYY-MM-DD format. If no date is specified, use today's date (September 7, 2025).
+    - 'loai' should be a category like "ăn uống", "đi lại", "lương", "mua sắm", "giải trí", "y tế", "giáo dục", "nhà ở", "tiết kiệm", "khác". If the type is income, use "lương" or "thu nhập".
+    - 'so_tien' should be a number.
+    - 'ghichu' is optional.
+
+    Examples:
+    "Chi 50k ăn sáng hôm nay" -> { "ngay": "2025-09-07", "loai": "ăn uống", "so_tien": 50000, "ghichu": "" }
+    "Thu 2tr tiền lương" -> { "ngay": "2025-09-07", "loai": "lương", "so_tien": 2000000, "ghichu": "" }
+    "Mua sách 150k ngày 20/8/2025" -> { "ngay": "2025-08-20", "loai": "mua sắm", "so_tien": 150000, "ghichu": "Mua sách" }
+    "Đi taxi 75 nghìn" -> { "ngay": "2025-09-07", "loai": "đi lại", "so_tien": 75000, "ghichu": "" }
+    "Tiền điện tháng 7 hết 300k" -> { "ngay": "2025-09-07", "loai": "nhà ở", "so_tien": 300000, "ghichu": "Tiền điện tháng 7" }
+
+    Text to parse: "${inputText}"
+    JSON:
+    `;
+
+      const result = await model.generateContent(prompt);
+      const response = result.response;
+      const jsonText = response.text().trim();
+
+      // Attempt to parse the JSON. The model might return extra text, so we try to extract the JSON part.
+      const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+      let data: GiaoDich;
+      if (jsonMatch && jsonMatch[0]) {
+        data = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('Could not parse JSON from AI response: ' + jsonText);
+      }
+
       // Ensure the date is in YYYY-MM-DD format if not provided by AI
       if (!data.ngay) {
-        data.ngay = new Date().toISOString().split('T')[0];
+        data.ngay = getHoChiMinhDateString();
       }
       setParsedTransaction(data);
     } catch (err: unknown) {
       console.error("Error parsing transaction:", err);
-      setError(err.message || "Failed to parse transaction. Please try again.");
+      setError((err as Error).message || "Failed to parse transaction. Please try again.");
     } finally {
       setLoading(false);
     }

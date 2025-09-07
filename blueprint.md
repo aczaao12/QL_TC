@@ -10,7 +10,7 @@
 
 ## 2. Quản lý dữ liệu (Offline-first)
 - [x] Cài Dexie.js (hoặc IndexedDB API trực tiếp).
-- [x] Thiết kế schema DB: `giao_dich { id, ngay, loai, so_tien, ghichu, firestoreId }`.
+- [x] Thiết kế schema DB: `giao_dich { id, ngay, loai, so_tien, ghichu }`.
 - [x] Viết hàm CRUD (thêm, sửa, xóa, query).
   - `addGiaoDich`, `getGiaoDichById`, `getAllGiaoDich`, `updateGiaoDich`, `deleteGiaoDich`, `getGiaoDichByDateRange`, `getGiaoDichByType`.
 - [x] Hiển thị danh sách giao dịch + tổng hợp chi tiêu.
@@ -18,20 +18,18 @@
   - Trang Giao dịch (`/transactions`): Hiển thị tất cả giao dịch.
 
 ## 3. AI nhập liệu
-- [x] Kết nối Gemini API (qua backend serverless để giấu API key).
-  - Triển khai Firebase Function `parseTransaction` để làm proxy cho Gemini API.
-  - Cấu hình TypeScript cho Firebase Functions.
+- [x] Kết nối Gemini API (trực tiếp trên frontend, sử dụng model `gemini-2.5-flash`).
 - [x] Prompt để **parse ngôn ngữ tự nhiên → JSON giao dịch**.
   - Prompt được thiết kế để chuyển đổi văn bản tiếng Việt thành JSON giao dịch với các trường `ngay`, `loai`, `so_tien`, `ghichu`.
 - [x] Tích hợp flow:
   1. User nhập text.
-  2. Gọi Gemini parse thông qua Firebase Function.
-  3. Lưu JSON vào IndexedDB và Firestore.
+  2. Gọi Gemini parse trực tiếp từ frontend.
+  3. Lưu JSON vào IndexedDB.
   - Trang Thêm Giao dịch (`/add-transaction`) hỗ trợ nhập liệu bằng AI.
+- [x] Đảm bảo múi giờ cho ngày mặc định là GMT+7 (HCM).
 
 ## 4. AI query & gợi ý
-- [x] Prompt để **trả lời dựa trên data đã lọc từ DB**.
-  - Triển khai Firebase Function `queryAI` nhận truy vấn và dữ liệu giao dịch.
+- [x] Prompt để **trả lời dựa trên data đã lọc từ DB** (sử dụng model `gemini-2.5-flash`).
 - [x] Xây module lấy data liên quan từ DB → đưa vào prompt → nhận output từ Gemini.
   - Trang Hỏi AI (`/ai-query`) cho phép người dùng nhập câu hỏi và nhận phản hồi từ AI dựa trên dữ liệu giao dịch.
 - [ ] AI gợi ý tiết kiệm / chiến lược dựa trên lịch sử chi tiêu.
@@ -57,21 +55,18 @@
 - [ ] Gửi cảnh báo khi chi vượt ngân sách (cần triển khai backend).
 
 ## 7. Đồng bộ (Optional)
-- [x] Tích hợp Firebase Firestore để sync data đa thiết bị.
-  - `addGiaoDich` lưu vào cả IndexedDB và Firestore.
-  - `syncFromFirestore` đồng bộ dữ liệu từ Firestore về IndexedDB khi khởi động ứng dụng.
+- [ ] Tích hợp Firebase Firestore để sync data đa thiết bị.
+  - Hiện tại không có đồng bộ Firestore.
 - [ ] Giải quyết conflict (last-write-wins hoặc merge logic).
-  - Hiện tại là đồng bộ một chiều đơn giản, chưa có giải quyết xung đột phức tạp.
 
 ## 8. Triển khai
 - [ ] Deploy frontend lên Vercel/Netlify.
   - Hướng dẫn: Chạy `npm run build` và deploy thư mục `out` (nếu dùng static export) hoặc kết nối repo Git với Vercel/Netlify.
 - [ ] Deploy backend serverless (API Gemini proxy) lên Cloudflare Workers / Firebase Functions.
-  - Hướng dẫn: Chạy `firebase deploy --only functions`.
+  - Hướng dẫn: Hiện tại không có backend serverless cho Gemini API.
 - [ ] Test PWA (offline, cài đặt như app mobile).
   - Hướng dẫn: Mở PWA đã deploy, kiểm tra chức năng offline, và thử cài đặt PWA trên thiết bị di động.
 
 ## 9. Biến giọng nói → text
 - [x] Tích hợp Web Speech API vào trang nhập liệu (`/add-transaction`).
   - Sử dụng `webkitSpeechRecognition` để chuyển giọng nói thành văn bản tiếng Việt.
-

@@ -1,0 +1,61 @@
+[debug] [2025-09-07T18:09:47.377Z] ----------------------------------------------------------------------
+[debug] [2025-09-07T18:09:47.391Z] Command:       /nix/store/ws50yvm6vzlzf7jzz6n7xh4szddrack1-nodejs-20.19.1/bin/node /nix/store/ddncjx4vr7n8ighdsnmviznfzlpb3d54-firebase-tools-14.15.1/lib/node_modules/firebase-tools/lib/bin/firebase.js init
+[debug] [2025-09-07T18:09:47.392Z] CLI Version:   14.15.1
+[debug] [2025-09-07T18:09:47.392Z] Platform:      linux
+[debug] [2025-09-07T18:09:47.393Z] Node Version:  v20.19.1
+[debug] [2025-09-07T18:09:47.393Z] Time:          Sun Sep 07 2025 18:09:47 GMT+0000 (Coordinated Universal Time)
+[debug] [2025-09-07T18:09:47.393Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-09-07T18:09:47.929Z] Checked if tokens are valid: false, expires at: 1757266919153
+[debug] [2025-09-07T18:09:47.929Z] Checked if tokens are valid: false, expires at: 1757266919153
+[debug] [2025-09-07T18:09:47.930Z] > refreshing access token with scopes: []
+[debug] [2025-09-07T18:09:47.933Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-09-07T18:09:47.933Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-09-07T18:09:48.044Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-09-07T18:09:48.044Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-09-07T18:09:48.063Z] >>> [apiv2][query] GET https://monospace-pa.googleapis.com/v1/workspaces/ql-tc-86988914 [none]
+[debug] [2025-09-07T18:09:49.049Z] <<< [apiv2][status] GET https://monospace-pa.googleapis.com/v1/workspaces/ql-tc-86988914 200
+[debug] [2025-09-07T18:09:49.050Z] <<< [apiv2][body] GET https://monospace-pa.googleapis.com/v1/workspaces/ql-tc-86988914 {"workspaceId":"ql-tc-86988914","name":"QL-TC","workspaceRedirectUrl":"firebase-ql-tc-1757260102938.cluster-qxqlf3vb3nbf2r42l5qfoebdry.cloudworkstations.dev","status":"WORKSPACE_STATUS_RUNNING","lastAccessDatetime":"2025-09-07T16:44:12.436080Z","workspaceTemplate":"WORKSPACE_TEMPLATE_BLANK_WEB","owner":"SELF","serviceAccountEmail":"msp-5483275012959560418@monospace-per-ws-sa-5.iam.gserviceaccount.com","enableNix":true,"ownerEmail":"aczaao12@gmail.com","workspaceImageUrl":"https://www.gstatic.com/monospace/231115/logo_nextjs.svg","templateArgs":"{\"language\":\"ts\",\"srcDir\":true,\"eslint\":true,\"app\":true,\"tailwind\":true,\"__agentic_workspace\":true}","templateRepoUrl":"file:///usr/local/monospace/templates/public/nextjs","workstationAccessToken":"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2Nsb3VkLmdvb2dsZS5jb20vd29ya3N0YXRpb25zIiwiYXVkIjoiZmlyZWJhc2UtcWwtdGMtMTc1NzI2MDEwMjkzOC5jbHVzdGVyLXF4cWxmM3ZiM25iZjJyNDJsNXFmb2ViZHJ5LmNsb3Vkd29ya3N0YXRpb25zLmRldiIsImlhdCI6MTc1NzI2ODU4OCwiZXhwIjoxNzU3MzU0OTg4fQ.YqNoh9fxlRMUo6IjsgAsWQiwFIXb3ZbrF5TVxgxyYpUw_l6bFVCiZMTckTv2T-rjTMxvFN-1c8ibHsXPuONAl9D3MvRvvuBtCPqIGxBsrk65Khs-Eg0Kuq-2S_auSYR9MKUQohtFVd4lQ5k-RS5hUgpVF2nRbB1hEsRn7X8V3FnpO5nGkjGlLT8W19vHMWbOvqFGr_OOWZwQ8aULgw5WMnp6mpG2zWHT_PjxcuotL3RbFRiapz9kvDjiBSsSHPIlurKl2ZhzUlSCA272UrCUBIXdUKVUMtNK_hTvEBKP18m79pPXMm4x8ifhkeBemDfNiBu9LLEFhAEETOAVp2-RpQ","firebaseProjectId":"ql-tc-65613"}
+[debug] [2025-09-07T18:09:49.054Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-09-07T18:09:49.055Z] > authorizing via signed-in user (aczaao12@gmail.com)
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  /home/user/ql-tc
+
+Before we get started, keep in mind:
+
+  * You are initializing within an existing Firebase project directory
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] but for now we'll just set up a default project.
+[info] 
+[debug] [2025-09-07T18:09:53.901Z] Using project from CLI flag: ql-tc-65613
+[debug] [2025-09-07T18:09:53.901Z] Checked if tokens are valid: true, expires at: 1757272187045
+[debug] [2025-09-07T18:09:53.901Z] Checked if tokens are valid: true, expires at: 1757272187045
+[debug] [2025-09-07T18:09:53.905Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/ql-tc-65613 [none]
+[debug] [2025-09-07T18:09:54.167Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/ql-tc-65613 200
+[debug] [2025-09-07T18:09:54.168Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/ql-tc-65613 {"projectId":"ql-tc-65613","projectNumber":"186724776357","displayName":"QL-TC","name":"projects/ql-tc-65613","resources":{"hostingSite":"ql-tc-65613","realtimeDatabaseInstance":"ql-tc-65613-default-rtdb"},"state":"ACTIVE","etag":"1_58493768-5e5e-48ac-9230-94348a1b7cdf"}
+[info] i  Using project ql-tc-65613 (QL-TC) 
+[info] 
+=== Hosting Setup
+[debug] [2025-09-07T18:09:54.200Z] Checked if tokens are valid: true, expires at: 1757272187045
+[debug] [2025-09-07T18:09:54.200Z] Checked if tokens are valid: true, expires at: 1757272187045
+[debug] [2025-09-07T18:09:54.200Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/ql-tc-65613 [none]
+[debug] [2025-09-07T18:09:54.434Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/ql-tc-65613 200
+[debug] [2025-09-07T18:09:54.434Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/ql-tc-65613 {"projectId":"ql-tc-65613","projectNumber":"186724776357","displayName":"QL-TC","name":"projects/ql-tc-65613","resources":{"hostingSite":"ql-tc-65613","realtimeDatabaseInstance":"ql-tc-65613-default-rtdb"},"state":"ACTIVE","etag":"1_58493768-5e5e-48ac-9230-94348a1b7cdf"}
+[info] 
+[info] Your public directory is the folder (relative to your project directory) that
+[info] will contain Hosting assets to be uploaded with firebase deploy. If you
+[info] have a build process for your assets, use your build's output directory.
+[info] 
