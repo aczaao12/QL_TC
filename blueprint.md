@@ -1,5 +1,9 @@
 # 📋 Tasks - PWA Quản lý Tiền có AI
 
+## Project Overview: PWA Quản lý Tiền có AI (Migration to React Vite)
+
+This project is a Progressive Web Application (PWA) for personal money management, enhanced with AI capabilities. The application aims to provide an intuitive and efficient way for users to track their income and expenses, offering insights and suggestions based on their spending habits. The current phase involves migrating the existing Next.js application to a React Vite setup.
+
 ## 1. Setup cơ bản
 - [x] Khởi tạo project (Next.js đã dùng templete, format nếu cần).
 - [ ] Cấu hình PWA (manifest.json, service worker) - *Tạm thời bỏ qua*.
@@ -100,3 +104,40 @@
 - [x] Budget / hạn mức chi tiêu theo category.
 - [x] Xuất dữ liệu CSV / PDF để lưu trữ hoặc báo cáo.
 - [x] Nhắc nhở / notification khi chi vượt hạn mức.
+
+## Current Task: Migrate to React Vite
+
+### Plan:
+1.  **New Project Setup:**
+    *   Create a new React project using Vite.
+    *   Install necessary dependencies (React Router for client-side routing, Dexie.js, etc.).
+2.  **Component Migration:**
+    *   Transfer existing React components from `src/components` and `src/app` to the new Vite project structure.
+    *   Adjust imports and paths as needed.
+    *   Convert Next.js specific components (e.g., those using `getServerSideProps` or `getStaticProps`) to client-side React components.
+3.  **Routing Implementation:**
+    *   Implement client-side routing using React Router to replicate the current page structure (`/`, `/add-transaction`, `/ai-query`, `/login`, `/settings`, `/transactions`).
+    *   Create corresponding route components for each page.
+4.  **PWA Configuration:**
+    *   Reconfigure PWA settings (manifest.json, service worker) for the Vite environment. This might involve using a Vite plugin for PWA.
+5.  **Styling Migration:**
+    *   Transfer `globals.css` and ensure PostCSS configuration is compatible with Vite, or adapt to a new styling approach if necessary.
+6.  **Firebase Integration:**
+    *   Re-integrate Firebase services (`src/services/firebase.ts`) into the new Vite project.
+    *   Ensure authentication (`AuthContext.tsx`) and database (`db.ts`) connections work correctly.
+7.  **AI Integration:**
+    *   Verify and re-establish the Gemini API integration.
+    *   Ensure AI-powered data entry and AI query functionalities work as expected.
+8.  **Data Management:**
+    *   Confirm Dexie.js/IndexedDB functionality remains intact.
+9.  **Build and Deployment:**
+    *   Update build scripts for Vite.
+    *   Adjust deployment configurations for the new Vite application.
+
+### Implications of Migration:
+*   **Loss of Next.js Specific Features:** The migration will mean losing Next.js features like Server Components (RSC), built-in API routes, automatic image optimization, and server-side rendering (SSR) unless explicitly re-implemented using a different approach (e.g., a separate Node.js backend for API routes, or a custom SSR setup with Vite).
+*   **Client-Side Routing:** All routing will be handled client-side, which might affect initial page load performance compared to Next.js's server-rendered pages.
+*   **Build Process:** The build process will shift from Next.js's Webpack-based build to Vite's Rollup-based build, which is generally faster for development.
+
+### Migration Status:
+- [x] Migrate to React Vite: Completed. The project now builds successfully with Vite. (Note: Node.js version warning and chunk size warnings are present but do not prevent functionality.)

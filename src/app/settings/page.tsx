@@ -1,18 +1,31 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Budget, addBudget, getAllBudgets, updateBudget, deleteBudget, getBudgetByCategory } from '@/services/db';
+import { Budget, addBudget, getAllBudgets, updateBudget, deleteBudget, getBudgetByCategory, syncData } from '@/services/db';
+import { useAuth } from '@/components/AuthContext'; // Import useAuth
+import Link from 'next/link';
+
+const LAST_SYNC_KEY = 'lastSyncTimestamp';
 
 export default function SettingsPage() {
+  const { user, loading } = useAuth(); // Get user and loading state from AuthContext
   const [budget, setBudget] = useState<number>(0);
-  const [syncEnabled, setSyncEnabled] = useState<boolean>(false);
+  const [syncEnabled, setSyncEnabled] = useState<boolean>(false); // This state is for the toggle, not the actual sync status
   const [storageUsage, setStorageUsage] = useState<{ usage: number; quota: number } | null>(null);
   const [storageError, setStorageError] = useState<string | null>(null);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [newBudgetCategory, setNewBudgetCategory] = useState<string>('');
   const [newBudgetAmount, setNewBudgetAmount] = useState<number>(0);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
+  const [lastSyncTimestamp, setLastSyncTimestamp] = useState<number | null>(null);
 
   useEffect(() => {
+    // Load last sync timestamp from local storage
+    const storedLastSync = localStorage.getItem(LAST_SYNC_KEY);
+    if (storedLastSync) {
+      setLastSyncTimestamp(parseInt(storedLastSync, 10));
+    }
+
     const getStorageEstimate = async () => {
       if (navigator.storage && navigator.storage.estimate) {
         try {
@@ -96,9 +109,66 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSyncNow = async () => {
+    if (!user) {
+      alert('Vui lòng đăng nhập để đồng bộ hóa dữ liệu.');
+      return;
+    }
+
+    setSyncStatus('syncing');
+    try {
+      await syncData(user.uid); // Call the new syncData function
+
+      const now = Date.now();
+      setLastSyncTimestamp(now);
+      localStorage.setItem(LAST_SYNC_KEY, now.toString());
+      setSyncStatus('success');
+      alert('Đồng bộ hóa dữ liệu thành công!');
+    } catch (error) {
+      console.error('Error during sync:', error);
+      setSyncStatus('error');
+      alert('Đồng bộ hóa dữ liệu thất bại. Vui lòng thử lại.');
+    }
+  };
+
+  const shouldPromptSync = user && lastSyncTimestamp && (Date.now() - lastSyncTimestamp > 24 * 60 * 60 * 1000); // Prompt if not synced in 24 hours
+
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Cài đặt</h1>
+
+      {/* User Status and Sync Prompt */}
+      <div className="mb-8 p-4 border rounded-md shadow-sm bg-white">
+        <h2 className="text-xl font-semibold mb-3">Trạng thái tài khoản & Đồng bộ hóa</h2>
+        {loading ? (
+          <p>Đang tải trạng thái người dùng...</p>
+        ) : user ? (
+          <div>
+            <p className="mb-2">Đã đăng nhập với: <span className="font-medium">{user.email}</span></p>
+            {lastSyncTimestamp && (
+              <p className="mb-2">Đồng bộ lần cuối: {new Date(lastSyncTimestamp).toLocaleString()}</p>
+            )}
+            {shouldPromptSync && (
+              <p className="text-orange-600 font-semibold mb-2">
+                Bạn đã không đồng bộ dữ liệu trong một thời gian. Hãy đồng bộ ngay!
+              </p>
+            )}
+            <button
+              onClick={handleSyncNow}
+              className={`px-4 py-2 rounded-md text-white ${
+                syncStatus === 'syncing' ? 'bg-gray-500 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'
+              }`}
+              disabled={syncStatus === 'syncing'}
+            >
+              {syncStatus === 'syncing' ? 'Đang đồng bộ...' : 'Đồng bộ ngay'}
+            </button>
+            {syncStatus === 'success' && <p className="text-green-600 mt-2">Đồng bộ thành công!</p>}
+            {syncStatus === 'error' && <p className="text-red-600 mt-2">Đồng bộ thất bại!</p>}
+          </div>
+        ) : (
+          <p>Bạn chưa đăng nhập. <Link href="/login" className="text-blue-500 hover:underline">Đăng nhập ngay</Link> để đồng bộ hóa dữ liệu.</p>
+        )}
+      </div>
 
       <div className="mb-8 p-4 border rounded-md shadow-sm bg-white">
         <h2 className="text-xl font-semibold mb-3">Ngân sách mục tiêu</h2>

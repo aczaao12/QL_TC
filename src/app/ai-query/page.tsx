@@ -8,6 +8,9 @@ import ReactMarkdown from 'react-markdown';
 const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
 const genAI = new GoogleGenerativeAI(API_KEY);
 
+const MAX_RETRIES = 3; // Define max retries
+const RETRY_DELAY_MS = 1000; // 1 second delay
+
 export default function AIQueryPage() {
   const [userQuery, setUserQuery] = useState<string>('');
   const [aiResponse, setAiResponse] = useState<string | null>(null);
@@ -23,11 +26,17 @@ export default function AIQueryPage() {
       setLoading(false);
       return;
     }
-    try {
-      const allTransactions: GiaoDich[] = await getAllGiaoDich();
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-      const prompt = `You are an AI assistant for personal money management. Analyze the following financial transaction data and answer the user's query. Provide insights and suggestions based on the data. If the query is about spending habits, suggest ways to save money or optimize spending.
+    try { // Outer try block
+      let attempts = 0;
+      while (attempts < MAX_RETRIES) {
+        try { // Inner try block for API call
+          const allTransactions: GiaoDich[] = await getAllGiaoDich();
+          const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+          const prompt = `You are an AI assistant for personal money management. Analyze the following financial transaction data and answer the user's query. Provide insights and suggestions based on the data. If the query is about spending habits, suggest ways to save money or optimize spending.
+
+      Please format any code examples or structured data using markdown code blocks.
 
 Financial Transaction Data (JSON array):
 ${JSON.stringify(allTransactions, null, 2)}
@@ -36,17 +45,45 @@ User Query: "${userQuery}"
 
 AI Response:`;
 
-      const result = await model.generateContent(prompt);
-      const response = result.response;
-      setAiResponse(response.text());
-    } catch (err: unknown) {
-      console.error("Error querying AI:", err);
-      let errorMessage = "Failed to get AI response. Please try again.";
-      if (err instanceof Error) {
-        errorMessage = err.message;
+          const result = await model.generateContent(prompt);
+          const response = result.response;
+          setAiResponse(response.text());
+          break; // Exit loop if successful
+        } catch (err: unknown) {
+          attempts++;
+          console.error(`Error querying AI (Attempt ${attempts}/${MAX_RETRIES}):`, err);
+          if (attempts < MAX_RETRIES) {
+            let isTransient = false;
+            if (err instanceof Error) {
+              if (err.message.includes('503') || err.message.includes('overloaded')) {
+                isTransient = true;
+              }
+            }
+            
+            if (isTransient) {
+              setError(`AI model is busy. Retrying in ${RETRY_DELAY_MS / 1000} seconds... (Attempt ${attempts}/${MAX_RETRIES})`);
+              await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+            } else {
+              // Not a transient error, re-throw or handle
+              let errorMessage = "Failed to get AI response. Please try again.";
+              if (err instanceof Error) {
+                errorMessage = err.message;
+              }
+              setError(errorMessage);
+              // No more retries for non-transient errors, so break the loop
+              break; // Exit while loop
+            }
+          } else {
+            // Max retries reached
+            let errorMessage = "Failed to get AI response after multiple attempts. Please try again later.";
+            if (err instanceof Error) {
+              errorMessage = err.message;
+            }
+            setError(errorMessage);
+          }
+        }
       }
-      setError(errorMessage);
-    } finally {
+    } finally { // Outer finally block
       setLoading(false);
     }
   };
@@ -82,7 +119,10 @@ AI Response:`;
       {aiResponse && (
         <div className="mt-6 p-4 border rounded-md bg-gray-50">
           <h2 className="text-xl font-semibold mb-3">Phản hồi từ AI:</h2>
-          <ReactMarkdown>{aiResponse}</ReactMarkdown>
+          <ReactMarkdown
+          >
+            {aiResponse}
+          </ReactMarkdown>
         </div>
       )}
     </div>

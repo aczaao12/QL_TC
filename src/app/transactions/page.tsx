@@ -1,18 +1,21 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { GiaoDich, getAllGiaoDich } from '@/services/db';
+import { GiaoDich, getAllGiaoDich, deleteGiaoDich } from '@/services/db'; // Import deleteGiaoDich
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<GiaoDich[]>([]);
   const [selectedMonth, setSelectedMonth] = useState<string>('all'); // Format: YYYY-MM or 'all'
   const [selectedYear, setSelectedYear] = useState<string>('all'); // Format: YYYY or 'all'
 
+  // Function to load transactions, now filtering out deleted ones
+  async function loadTransactions() {
+    const allTransactions = await getAllGiaoDich();
+    // Filter out soft-deleted transactions
+    setTransactions(allTransactions.filter(tx => !tx.deleted));
+  }
+
   useEffect(() => {
-    async function loadTransactions() {
-      const allTransactions = await getAllGiaoDich();
-      setTransactions(allTransactions);
-    }
     loadTransactions();
   }, []);
 
@@ -95,6 +98,23 @@ export default function TransactionsPage() {
     }
   };
 
+  const handleDeleteTransaction = async (id: string | undefined) => {
+    if (!id) {
+      alert("Không tìm thấy ID giao dịch.");
+      return;
+    }
+    if (window.confirm("Bạn có chắc chắn muốn xóa giao dịch này?")) {
+      try {
+        await deleteGiaoDich(id);
+        alert("Giao dịch đã được xóa (đánh dấu xóa mềm). Vui lòng đồng bộ để cập nhật lên Cloud.");
+        loadTransactions(); // Reload transactions to reflect the change
+      } catch (error) {
+        console.error("Lỗi khi xóa giao dịch:", error);
+        alert("Không thể xóa giao dịch.");
+      }
+    }
+  };
+
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Tất cả Giao dịch</h1>
@@ -164,6 +184,7 @@ export default function TransactionsPage() {
       </div>
 
       <h2 className="text-xl font-bold mb-3">Giao dịch chi tiết</h2>
+      {/* ... (rest of the component) */}
       {
         filteredTransactions.length === 0 ? (
           <p>Chưa có giao dịch nào phù hợp với bộ lọc.</p>
@@ -175,9 +196,17 @@ export default function TransactionsPage() {
                   <p className="font-medium">{tx.ngay} - {tx.loai} {tx.tai_khoan && `(${tx.tai_khoan})`} {tx.du_an_muc_tieu && `[${tx.du_an_muc_tieu}]`}</p>
                   <p className="text-gray-600">{tx.ghichu}</p>
                 </div>
-                <p className={`font-bold ${tx.loai === 'thu' ? 'text-green-600' : 'text-red-600'}`}>
-                  {tx.so_tien.toLocaleString('vi-VN')} VNĐ
-                </p>
+                <div className="flex items-center space-x-2">
+                  <p className={`font-bold ${tx.loai === 'thu' ? 'text-green-600' : 'text-red-600'}`}>
+                    {tx.so_tien.toLocaleString('vi-VN')} VNĐ
+                  </p>
+                  <button
+                    onClick={() => handleDeleteTransaction(tx.id)}
+                    className="bg-red-500 text-white px-2 py-1 rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                  >
+                    Xóa
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
