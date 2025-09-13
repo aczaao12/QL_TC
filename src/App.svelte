@@ -11,6 +11,7 @@
   import { getExpenses, clearAndAddExpenses } from './lib/indexedDb';
   import { expensesUpdated, fundSources } from './lib/stores'; // Import expensesUpdated and fundSources store
   import FundSourceManager from './lib/FundSourceManager.svelte'; // Import FundSourceManager
+  import FundSourceSummary from './lib/FundSourceSummary.svelte'; // Import FundSourceSummary
   
 
   let user: any | null = null;
@@ -128,7 +129,7 @@
   </div>
 </nav>
 
-<main class="container mt-4">
+<main class="container">
   {#if user}
     {#if syncMessage}
       <div class="alert alert-{syncMessageType} alert-dismissible fade show" role="alert">
@@ -137,7 +138,9 @@
       </div>
     {/if}
 
-    <div class="row">
+    <FundSourceSummary />
+
+    <div class="row mt-4">
       <div class="col-md-6">
         <ExpenseInput />
         <hr>

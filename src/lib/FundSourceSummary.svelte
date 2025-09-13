@@ -5,18 +5,6 @@
   $: totalBalance = $fundSources.reduce((sum, source) => sum + source.balance, 0);
 </script>
 
-<div class="card mt-4">
-  <div class="card-header">
-    <h5>Total Balance: {totalBalance.toLocaleString('vi-VN')} VND</h5>
-  </div>
-  <ul class="list-group list-group-flush">
-    {#each $fundSources as source (source.id)}
-      <li class="list-group-item d-flex justify-content-between align-items-center">
-        <span>{source.name}</span>
-        <strong>{source.balance.toLocaleString('vi-VN')} VND</strong>
-      </li>
-    {:else}
-      <li class="list-group-item text-center text-muted">No fund sources added.</li>
-    {/each}
-  </ul>
-</div>
+<li class="list-group-item d-flex justify-content-between align-items-center list-group-item-info fw-bold fs-5 s-W5567j2H82Zs">
+  <strong class="s-W5567j2H82Zs">Tiền còn lại</strong> <span class="s-W5567j2H82Zs">1.290.000 VND</span>
+</li>
