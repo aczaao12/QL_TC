@@ -79,3 +79,18 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* Styles for ExpenseChart.svelte elements, moved to global CSS to avoid Svelte linter warnings */
+.axis-label {
+  font-size: 10px;
+  fill: #a0a0a0;
+}
+
+.grid-line {
+  stroke: rgba(255,255,255,0.2);
+  shape-rendering: crispEdges;
+}
+
+rect {
+  cursor: pointer;
+}

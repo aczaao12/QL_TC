@@ -3,18 +3,24 @@
   import ExpenseInput from './lib/ExpenseInput.svelte';
   import ExpenseList from './lib/ExpenseList.svelte';
   import ExpenseChart from './lib/ExpenseChart.svelte'; // Import ExpenseChart
-  import Chatbot from './lib/Chatbot.svelte';
+  import AdvancedChatbot from './lib/AdvancedChatbot.svelte'; // Import AdvancedChatbot
   import { auth, database } from './lib/firebase';
   import { onAuthStateChanged } from 'firebase/auth';
   import { ref, set, get, child } from 'firebase/database';
   import { onMount } from 'svelte';
   import { getExpenses, clearAndAddExpenses } from './lib/indexedDb';
-  import { expensesUpdated } from './lib/stores';
+  import { expensesUpdated, fundSources } from './lib/stores'; // Import expensesUpdated and fundSources store
+  import FundSourceManager from './lib/FundSourceManager.svelte'; // Import FundSourceManager
+  
 
   let user: any | null = null;
   let syncMessage: string | null = null;
   let syncMessageType: 'success' | 'danger' | null = null;
-  let showChatbot = false;
+  let activeChatbot: 'old' | 'advanced' | null = null; // New state for active chatbot
+  let showExpenseModal: boolean = false; // State to control modal visibility
+  let showFundSourceManager: boolean = false; // New state for FundSourceManager visibility
+  let totalExpenses: number = 0; // To store total expenses
+  let remainingBalance: number = 0; // To store remaining balance
 
   onMount(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -29,6 +35,20 @@
     return () => unsubscribe();
   });
 
+  expensesUpdated.subscribe(async (updated) => {
+    if (updated) {
+      await calculateRemainingBalance();
+      expensesUpdated.set(false);
+    }
+  });
+
+  async function calculateRemainingBalance() {
+    const allExpenses = await getExpenses();
+    totalExpenses = allExpenses.reduce((sum, e) => sum + e.amount, 0);
+    const currentTotalBalance = $fundSources.reduce((sum, source) => sum + source.balance, 0);
+    remainingBalance = currentTotalBalance - totalExpenses;
+  }
+
   async function loadExpensesFromFirebaseToIndexedDB(uid: string) {
     try {
       const dbRef = ref(database);
@@ -37,7 +57,7 @@
         const firebaseExpenses = snapshot.val();
         const expensesArray = Object.values(firebaseExpenses);
         await clearAndAddExpenses(expensesArray);
-        console.log('Expenses loaded from Firebase to IndexedDB.');
+        console.log('Expenses loaded from Firebase to Firebase.');
         expensesUpdated.set(true);
       } else {
         console.log('No expenses found in Firebase for this user.');
@@ -78,65 +98,69 @@
     }
   }
 
-  function toggleChatbot() {
-    showChatbot = !showChatbot;
+  function toggleChatbot(type: 'old' | 'advanced' | null) {
+    if (activeChatbot === type) {
+      activeChatbot = null; // Hide if already active
+    } else {
+      activeChatbot = type;
+    }
   }
 </script>
 
-<main>
-  {#if user}
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-      <div class="container-fluid">
-        <span class="navbar-brand">Expense Tracker</span>
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav ms-auto">
-            <li class="nav-item">
-              <span class="nav-link">Welcome, {user.email}</span>
-            </li>
-            <li class="nav-item">
-              <button class="btn btn-info me-2" on:click={toggleChatbot}>
-                {showChatbot ? 'Hide Chatbot' : 'Show Chatbot'}
-              </button>
-            </li>
-            <li class="nav-item">
-              <button class="btn btn-primary me-2" on:click={syncWithFirebase}>Sync</button>
-            </li>
-            <li class="nav-item">
-              <button class="btn btn-outline-danger" on:click={handleLogout}>Logout</button>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </nav>
-    <div class="container mt-3">
-      {#if syncMessage}
-        <div class="alert alert-{syncMessageType}" role="alert">
-          {syncMessage}
-        </div>
-      {/if}
-    </div>
-    <div class="container">
-      {#if showChatbot}
-        <Chatbot userId={user.uid} />
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/">Chi Tiêu Cá Nhân</a>
+    <div class="d-flex">
+      {#if user}
+        <span class="navbar-text me-3">
+          Logged in as: {user.email}
+        </span>
+        <button class="btn btn-outline-primary me-2" on:click={syncWithFirebase}>
+          Sync with Cloud
+        </button>
+        <button class="btn btn-outline-secondary" on:click={handleLogout}>
+          Logout
+        </button>
       {:else}
-        <div class="row">
-          <div class="col-md-4">
-            <ExpenseInput />
-          </div>
-          <div class="col-md-4">
-            <ExpenseList />
-          </div>
-          <div class="col-md-4">
-            <ExpenseChart />
-          </div>
-        </div>
+        <Auth />
       {/if}
     </div>
-  {:else}
-    <Auth />
+  </div>
+</nav>
+
+<main class="container mt-4">
+  {#if user}
+    {#if syncMessage}
+      <div class="alert alert-{syncMessageType} alert-dismissible fade show" role="alert">
+        {syncMessage}
+        <button type="button" class="btn-close" on:click={() => syncMessage = null} aria-label="Close"></button>
+      </div>
+    {/if}
+
+    <div class="row">
+      <div class="col-md-6">
+        <ExpenseInput />
+        <hr>
+        <ExpenseList />
+      </div>
+      <div class="col-md-6">
+        <div class="d-flex justify-content-around mb-3">
+          <button class="btn btn-info" on:click={() => toggleChatbot('advanced')}>
+            Advanced Chatbot
+          </button>
+        </div>
+
+        {#if activeChatbot === 'advanced'}
+          <AdvancedChatbot />
+        {/if}
+
+        <hr>
+        <ExpenseChart />
+      </div>
+    </div>
   {/if}
 </main>
 
 <style>
-  /* You can add global styles here if needed */
+  /* Add any global styles here if necessary */
 </style>
