@@ -25,7 +25,7 @@
 
     if (amount !== null && category && date) {
       try {
-        await addExpense({ amount, category, date });
+        await addExpense({ type: 'expense', name: category, amount, category, date });
         message = 'Expense added successfully!';
         messageType = 'success';
         console.log('New Expense added:', { amount, category, date });

@@ -1,7 +1,9 @@
 // src/lib/aiService.ts
 import { database } from './firebase';
-import { ref, get, child } from 'firebase/database';
+import { ref, get, child, set, push } from 'firebase/database';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { addExpense as addExpenseToIndexedDB } from './indexedDb';
+import { processLocalPrompt } from './localNlpService';
 
 // Access your API key (replace with your actual API key or environment variable)
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
@@ -70,26 +72,20 @@ const getPeriodDates = (period: string, prompt: string) => {
     const endYear = fromDayToDayMatch[6] ? parseInt(fromDayToDayMatch[6], 10) : now.getFullYear();
 
     startDate = new Date(startYear, startMonth, startDay);
-    startDate.setHours(0, 0, 0, 0);
     endDate = new Date(endYear, endMonth, endDay);
-    endDate.setHours(23, 59, 59, 999);
   } else if (fromDayToNowMatch) {
     const startDay = parseInt(fromDayToNowMatch[1], 10);
     const startMonth = fromDayToNowMatch[2] ? parseInt(fromDayToNowMatch[2], 10) - 1 : now.getMonth();
     const startYear = fromDayToNowMatch[3] ? parseInt(fromDayToNowMatch[3], 10) : now.getFullYear();
 
     startDate = new Date(startYear, startMonth, startDay);
-    startDate.setHours(0, 0, 0, 0);
     endDate = new Date(); // End date is today
-    endDate.setHours(23, 59, 59, 999);
   } else if (fromMonthToNowMatch) {
     const startMonth = parseInt(fromMonthToNowMatch[1], 10) - 1;
     const startYear = fromMonthToNowMatch[2] ? parseInt(fromMonthToNowMatch[2], 10) : now.getFullYear();
 
     startDate = new Date(startYear, startMonth, 1);
-    startDate.setHours(0, 0, 0, 0);
     endDate = new Date(); // End date is today
-    endDate.setHours(23, 59, 59, 999);
   } else if (fromMonthToMonthMatch) {
     const startMonth = parseInt(fromMonthToMonthMatch[1], 10) - 1;
     const startYear = fromMonthToMonthMatch[2] ? parseInt(fromMonthToMonthMatch[2], 10) : now.getFullYear();
@@ -98,46 +94,87 @@ const getPeriodDates = (period: string, prompt: string) => {
     const endYear = fromMonthToMonthMatch[4] ? parseInt(fromMonthToMonthMatch[4], 10) : now.getFullYear();
 
     startDate = new Date(startYear, startMonth, 1);
-    startDate.setHours(0, 0, 0, 0);
     endDate = new Date(endYear, endMonth + 1, 0); // Last day of the end month
-    endDate.setHours(23, 59, 59, 999);
   } else if (fromYearToNowMatch) {
     const startYear = parseInt(fromYearToNowMatch[1], 10);
 
     startDate = new Date(startYear, 0, 1);
-    startDate.setHours(0, 0, 0, 0);
     endDate = new Date(); // End date is today
-    endDate.setHours(23, 59, 59, 999);
   } else if (fromYearToYearMatch) {
     const startYear = parseInt(fromYearToYearMatch[1], 10);
     const endYear = parseInt(fromYearToYearMatch[2], 10);
 
     startDate = new Date(startYear, 0, 1);
-    startDate.setHours(0, 0, 0, 0);
     endDate = new Date(endYear, 11, 31); // Last day of the end year
-    endDate.setHours(23, 59, 59, 999);
   } else if (period.includes('hôm nay') || period.includes('today')) {
-    startDate.setHours(0, 0, 0, 0);
-    endDate.setHours(23, 59, 59, 999);
+    // startDate and endDate are already today's date
   } else if (period.includes('tuần này') || period.includes('this week')) {
     const day = now.getDay();
     startDate = new Date(now.setDate(now.getDate() - day));
-    startDate.setHours(0, 0, 0, 0);
     endDate = new Date(now.setDate(now.getDate() - day + 6));
-    endDate.setHours(23, 59, 59, 999);
   } else if (period.includes('tháng này') || period.includes('this month')) {
     startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-    startDate.setHours(0, 0, 0, 0);
     endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    endDate.setHours(23, 59, 59, 999);
   } else if (period.includes('năm nay') || period.includes('this year')) {
     startDate = new Date(now.getFullYear(), 0, 1);
-    startDate.setHours(0, 0, 0, 0);
     endDate = new Date(now.getFullYear(), 11, 31);
-    endDate.setHours(23, 59, 59, 999);
   }
+  
+  startDate.setHours(0, 0, 0, 0);
+  endDate.setHours(23, 59, 59, 999);
   return { startDate, endDate };
 };
+
+// Helper function to save a transaction to Firebase and IndexedDB
+async function saveTransactionToDatabase(transaction: TransactionData, userId: string) {
+  // Save to Firebase
+  const newPostKey = push(child(ref(database), `users/${userId}/transactions`)).key;
+  if (newPostKey) {
+    await set(ref(database, `users/${userId}/transactions/${newPostKey}`), transaction);
+  }
+
+  // Save to IndexedDB
+  await addExpenseToIndexedDB(transaction);
+}
+
+// Placeholder for local transaction adding
+async function addTransactionLocally(transaction: TransactionData, userId: string): Promise<{ responseText: string; expenseData: TransactionData[] | null }> {
+  await saveTransactionToDatabase(transaction, userId); // Call the new centralized saving function
+  
+  // Use Gemini to create a friendly, natural language response
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash"});
+  const confirmationPrompt = `Generate a friendly and concise confirmation message in Vietnamese for a recorded transaction.
+  The transaction details are:
+  - Type: ${transaction.type === 'expense' ? 'Chi tiêu' : 'Thu nhập'}
+  - Name: ${transaction.name}
+  - Amount: ${transaction.amount.toLocaleString()} VND
+  - Date: ${new Date(transaction.date).toLocaleDateString()}
+  The message should sound like a helpful assistant and should not include any technical details.`;
+
+  try {
+    const result = await model.generateContent(confirmationPrompt);
+    const responseText = result.response.text();
+    return { responseText: responseText, expenseData: [transaction] };
+  } catch (error) {
+    console.error('Error generating confirmation message with Gemini:', error);
+    // Fallback to a simple local message
+    return { responseText: `Đã ghi nhận giao dịch cục bộ: ${transaction.name} ${transaction.amount.toLocaleString()} VND.`, expenseData: [transaction] };
+  }
+}
+
+// Function to handle local transaction querying by calling the main transaction query handler
+async function queryTransactionsLocally(data: any, userId: string): Promise<{ responseText: string; expenseData: TransactionData[] | null }> {
+  let queryPrompt = '';
+  if (data && data.period) {
+    queryPrompt = `liệt kê giao dịch ${data.period}`;
+  } else if (data && data.startDate && data.endDate) {
+    // Assuming startDate and endDate are in YYYY-MM-DD format
+    queryPrompt = `liệt kê giao dịch từ ngày ${data.startDate} đến ngày ${data.endDate}`;
+  } else {
+    queryPrompt = 'liệt kê tất cả giao dịch'; // Default if no specific period is provided
+  }
+  return await handleTransactionQuery(queryPrompt, userId);
+}
 
 // Function to handle transaction queries
 const handleTransactionQuery = async (prompt: string, userId: string) => {
@@ -150,6 +187,7 @@ const handleTransactionQuery = async (prompt: string, userId: string) => {
   } else {
     let filteredTransactions = transactions;
     let period = 'all';
+    let periodText = '';
     let customStartDate: Date | undefined;
     let customEndDate: Date | undefined;
 
@@ -172,9 +210,7 @@ const handleTransactionQuery = async (prompt: string, userId: string) => {
       const endYear = fromDayToDayMatch[6] ? parseInt(fromDayToDayMatch[6], 10) : now.getFullYear();
 
       customStartDate = new Date(startYear, startMonth, startDay);
-      customStartDate.setHours(0, 0, 0, 0);
       customEndDate = new Date(endYear, endMonth, endDay);
-      customEndDate.setHours(23, 59, 59, 999);
     } else if (fromDayToNowMatch) {
       period = 'custom_range';
       const now = new Date();
@@ -183,9 +219,7 @@ const handleTransactionQuery = async (prompt: string, userId: string) => {
       const startYear = fromDayToNowMatch[3] ? parseInt(fromDayToNowMatch[3], 10) : now.getFullYear();
 
       customStartDate = new Date(startYear, startMonth, startDay);
-      customStartDate.setHours(0, 0, 0, 0);
       customEndDate = new Date(); // End date is today
-      customEndDate.setHours(23, 59, 59, 999);
     } else if (fromMonthToNowMatch) {
       period = 'custom_range';
       const now = new Date();
@@ -193,9 +227,7 @@ const handleTransactionQuery = async (prompt: string, userId: string) => {
       const startYear = fromMonthToNowMatch[2] ? parseInt(fromMonthToNowMatch[2], 10) : now.getFullYear();
 
       customStartDate = new Date(startYear, startMonth, 1);
-      customStartDate.setHours(0, 0, 0, 0);
       customEndDate = new Date(); // End date is today
-      customEndDate.setHours(23, 59, 59, 999);
     } else if (fromMonthToMonthMatch) {
       period = 'custom_range';
       const now = new Date();
@@ -206,28 +238,20 @@ const handleTransactionQuery = async (prompt: string, userId: string) => {
       const endYear = fromMonthToMonthMatch[4] ? parseInt(fromMonthToMonthMatch[4], 10) : now.getFullYear();
 
       customStartDate = new Date(startYear, startMonth, 1);
-      customStartDate.setHours(0, 0, 0, 0);
       customEndDate = new Date(endYear, endMonth + 1, 0); // Last day of the end month
-      customEndDate.setHours(23, 59, 59, 999);
     } else if (fromYearToNowMatch) {
       period = 'custom_range';
-      const now = new Date();
       const startYear = parseInt(fromYearToNowMatch[1], 10);
 
       customStartDate = new Date(startYear, 0, 1);
-      customStartDate.setHours(0, 0, 0, 0);
       customEndDate = new Date(); // End date is today
-      customEndDate.setHours(23, 59, 59, 999);
     } else if (fromYearToYearMatch) {
       period = 'custom_range';
-      const now = new Date();
       const startYear = parseInt(fromYearToYearMatch[1], 10);
       const endYear = parseInt(fromYearToYearMatch[2], 10);
 
       customStartDate = new Date(startYear, 0, 1);
-      customStartDate.setHours(0, 0, 0, 0);
       customEndDate = new Date(endYear, 11, 31); // Last day of the end year
-      customEndDate.setHours(23, 59, 59, 999);
     } else if (lowerCasePrompt.includes('hôm nay') || lowerCasePrompt.includes('today')) {
       period = 'hôm nay';
     } else if (lowerCasePrompt.includes('tuần này') || lowerCasePrompt.includes('this week')) {
@@ -239,10 +263,7 @@ const handleTransactionQuery = async (prompt: string, userId: string) => {
     }
 
     if (period !== 'all') {
-      const { startDate, endDate } = (period === 'custom_range' && customStartDate && customEndDate)
-        ? { startDate: customStartDate, endDate: customEndDate } 
-        : getPeriodDates(period, lowerCasePrompt);
-
+      const { startDate, endDate } = getPeriodDates(period, lowerCasePrompt);
       filteredTransactions = transactions.filter(trans => {
         const transDate = new Date(trans.date);
         return transDate >= startDate && transDate <= endDate;
@@ -344,8 +365,32 @@ const handleTransactionQuery = async (prompt: string, userId: string) => {
   }
 };
 
+
+// New function to handle financial analysis requests
+const handleFinancialAnalysis = async (prompt: string): Promise<{ responseText: string; expenseData: TransactionData[] | null }> => {
+  // Use Gemini to provide a detailed financial analysis
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash"});
+  const analysisPrompt = `Dựa trên dữ liệu giao dịch của người dùng (từ Firebase), hãy tạo một báo cáo phân tích tài chính ngắn gọn cho câu lệnh sau: "${prompt}".
+  Phân tích này nên bao gồm:
+  - Tổng quan về chi tiêu và thu nhập.
+  - Phân tích chi tiêu theo từng danh mục.
+  - Đưa ra những lời khuyên hữu ích để tối ưu chi tiêu trong tháng tới.
+  Sử dụng ngôn ngữ thân thiện, dễ hiểu như một trợ lý tài chính.`;
+
+  try {
+    // This is a placeholder for the full implementation
+    // You would fetch user data here and pass it to Gemini for a real analysis
+    const result = await model.generateContent(analysisPrompt);
+    const responseText = result.response.text();
+    return { responseText: responseText, expenseData: null };
+  } catch (error) {
+    console.error('Error generating financial analysis with Gemini:', error);
+    return { responseText: 'Xin lỗi, tôi gặp sự cố khi tạo báo cáo phân tích tài chính.', expenseData: null };
+  }
+};
+
 // Function to handle transaction adding via Gemini
-const handleTransactionAdding = async (prompt: string) => {
+const handleTransactionAdding = async (prompt: string, userId: string) => {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash"});
     const now = new Date();
@@ -356,23 +401,100 @@ const handleTransactionAdding = async (prompt: string) => {
     const minutes = Math.abs(timezoneOffset) % 60;
     const timezone = `UTC${sign}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 
-    const commonCategories = {
-      expense: ['Ăn uống', 'Đi lại', 'Nhà cửa', 'Tiện ích', 'Mua sắm', 'Giải trí', 'Sức khỏe', 'Giáo dục', 'Khác'],
-      income: ['Lương', 'Thưởng', 'Đầu tư', 'Quà tặng', 'Khác'],
-    };
-
-    const geminiPrompt = `You are an expense and income tracking assistant. The current date is ${currentDate} and the timezone is ${timezone}. Analyze the following user message. If it contains information about one or more expenses or incomes, extract them and respond ONLY with a JSON array of objects. Each object in the array should be in the format: 
+    const geminiPrompt = `You are an expense and income tracking assistant. The current date is ${currentDate} and the timezone is ${timezone}.
+    Your primary goal is to extract expense or income information from user messages and respond ONLY with a JSON array of objects.
+    Each object in the array MUST be in the following format:
     [
       {
         "type": "expense" | "income",
-        "name": "<string>",
-        "category": "<string>",
-        "amount": <number>,
-        "date": "YYYY-MM-DD" (if specified, otherwise today's date)
+        "name": "<string>", // A brief description of the item/service
+        "category": "<string>", // e.g., "Ăn uống", "Đi lại", "Mua sắm", "Lương", "Thưởng"
+        "amount": <number>, // The amount in VND
+        "date": "YYYY-MM-DD" // If specified in the message, otherwise use today's date
       },
       // ... more objects if multiple transactions
     ]
-    If the message is not about expenses or incomes, or if you cannot extract all necessary details, respond with a natural language answer. User message: "${prompt}"`;
+    If the message does NOT contain clear expense or income information that can be fully extracted into the JSON format, then and ONLY then, respond with a natural language answer.
+    
+    Here are some examples of what to return for different user prompts:
+    User: "Hôm nay tôi chi 50k ăn trưa"
+    Assistant:
+    \`\`\`json
+    [
+      {
+        "type": "expense",
+        "name": "Ăn trưa",
+        "category": "Ăn uống",
+        "amount": 50000,
+        "date": "${currentDate}"
+      }
+    ]
+    \`\`\`
+
+    User: "Ngày 19/2/2022 tôi chi 200 tr mua xe"
+    Assistant:
+    \`\`\`json
+    [
+      {
+        "type": "expense",
+        "name": "Mua xe",
+        "category": "Đi lại",
+        "amount": 200000000,
+        "date": "2022-02-19"
+      }
+    ]
+    \`\`\`
+
+    User: "Tôi nhận lương 10 triệu"
+    Assistant:
+    \`\`\`json
+    [
+      {
+        "type": "income",
+        "name": "Lương tháng",
+        "category": "Lương",
+        "amount": 10000000,
+        "date": "${currentDate}"
+      }
+    ]
+    \`\`\`
+    
+    User: "Hôm nay tôi chi 10k bánh, 2k tiền gửi xe, 5k bị rơi mất. 20k tiền nước"
+    Assistant:
+    \`\`\`json
+    [
+      {
+        "type": "expense",
+        "name": "Bánh ngọt",
+        "category": "Ăn uống",
+        "amount": 10000,
+        "date": "${currentDate}"
+      },
+      {
+        "type": "expense",
+        "name": "Gửi xe",
+        "category": "Đi lại",
+        "amount": 2000,
+        "date": "${currentDate}"
+      },
+      {
+        "type": "expense",
+        "name": "Bị rơi mất",
+        "category": "Khác",
+        "amount": 5000,
+        "date": "${currentDate}"
+      },
+      {
+        "type": "expense",
+        "name": "Tiền nước",
+        "category": "Ăn uống",
+        "amount": 20000,
+        "date": "${currentDate}"
+      }
+    ]
+    \`\`\`
+
+    User message: "${prompt}"`;
 
     const result = await model.generateContent(geminiPrompt);
     const response = await result.response;
@@ -407,46 +529,66 @@ const handleTransactionAdding = async (prompt: string) => {
       });
 
       if (validTransactions.length > 0) {
-        return { responseText: `Understood! I'll record: ${summaryResponse.trim()}`, expenseData: validTransactions };
+        for (const transaction of validTransactions) {
+          await saveTransactionToDatabase(transaction, userId); // Call the new centralized saving function
+        }
+        return { responseText: `Understood! I've recorded: ${summaryResponse.trim()}`, expenseData: validTransactions };
       } else {
         return { responseText: geminiText, expenseData: null };
       }
     } catch (jsonError) {
+      console.error('Error parsing JSON from Gemini, returning raw text:', jsonError);
       return { responseText: geminiText, expenseData: null };
     }
   } catch (error) {
     console.error('Error calling Gemini API:', error);
-    return { responseText: 'Sorry, I am having trouble connecting to the AI at the moment.', expenseData: null };
+    return { responseText: 'Xin lỗi, tôi gặp sự cố khi kết nối với AI. Vui lòng thử lại sau.', expenseData: null };
   }
 };
-
-// Data-driven routing model
-const intentRoutes = [
-  {
-    keywords: ['chi bao nhiêu', 'thu bao nhiêu', 'tổng chi', 'tổng thu', 'liệt kê', 'khoản chi', 'khoản thu', 'tất cả', 'từ ngày', 'từ tháng', 'từ năm'],
-    action: handleTransactionQuery,
-  },
-  {
-    keywords: ['hello', 'xin chào', 'hi'],
-    action: async () => ({ responseText: 'Hello there! How can I help you with your expenses and income today?', expenseData: null }),
-  },
-  {
-    keywords: ['thêm chi', 'ghi lại chi', 'thêm thu', 'ghi lại thu', 'chi', 'thu'],
-    action: handleTransactionAdding,
-  }
-];
 
 export async function callGeminiAPI(prompt: string, userId: string): Promise<{ responseText: string; expenseData: TransactionData[] | null }> {
   console.log(`Calling Gemini API with prompt: "${prompt}" for user: ${userId}`);
   const lowerCasePrompt = prompt.toLowerCase();
+  
+  // 1. Check for complex requests first and route them directly to Gemini
+  const isMultiTransaction = lowerCasePrompt.includes(' và ') || lowerCasePrompt.includes(' cùng ') || lowerCasePrompt.split(',').length > 1 || prompt.match(/\b\d+(\.\d+)?\s*(k|nghìn|triệu|tr)\b/g)?.length > 1;
+  const isFinancialAnalysis = lowerCasePrompt.includes('phân tích') || lowerCasePrompt.includes('thống kê') || lowerCasePrompt.includes('báo cáo');
 
-  // Find a matching intent based on keywords
-  for (const route of intentRoutes) {
-    if (route.keywords.some(keyword => lowerCasePrompt.includes(keyword))) {
-      return await route.action(prompt, userId);
+  if (isMultiTransaction) {
+    return await handleTransactionAdding(prompt, userId);
+  }
+  
+  if (isFinancialAnalysis) {
+    return await handleFinancialAnalysis(prompt);
+  }
+
+  // 2. If not a complex request, try local NLP
+  const localNlpResult = processLocalPrompt(prompt);
+
+  // Intent: ADD TRANSACTION (SINGLE OBJECT)
+  if (localNlpResult.intent === 'add_expense' || localNlpResult.intent === 'add_income') {
+    if (localNlpResult.data?.type && localNlpResult.data?.amount) {
+      const transactionToAdd: TransactionData = {
+        type: localNlpResult.data.type,
+        name: localNlpResult.data.name || 'Chưa phân loại',
+        category: localNlpResult.data.category || 'Chưa phân loại',
+        amount: localNlpResult.data.amount,
+        date: localNlpResult.data.date || new Date().toISOString().split('T')[0],
+      };
+      return await addTransactionLocally(transactionToAdd, userId);
     }
   }
 
-  // Fallback to a generic Gemini call if no specific intent is found
-  return handleTransactionAdding(prompt);
+  // Intent: QUERY EXPENSE/INCOME
+  if (localNlpResult.intent === 'query_expense') {
+    return await queryTransactionsLocally(localNlpResult.data, userId);
+  }
+  
+  // Intent: GREETING
+  if (localNlpResult.intent === 'greeting') {
+    return { responseText: 'Chào bạn! Tôi có thể giúp gì cho bạn hôm nay?', expenseData: null };
+  }
+
+  // 3. Fallback to Gemini for unrecognized commands
+  return await handleTransactionAdding(prompt, userId);
 }
