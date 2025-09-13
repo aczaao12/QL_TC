@@ -16,5 +16,13 @@
     "svelte-check": "^4.3.1",
     "typescript": "~5.8.3",
     "vite": "^7.1.2"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@popperjs/core": "^2.11.8",
+    "bootstrap": "^5.3.8",
+    "d3-array": "^3.2.4",
+    "firebase": "^12.2.1",
+    "layercake": "^8.4.4"
   }
 }
