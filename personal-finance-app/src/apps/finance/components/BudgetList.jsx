@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { db } from '../firebase';
+import { db } from '../../../services/firebase';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { Box, Typography, List, ListItem, ListItemText, Paper, CircularProgress, LinearProgress, ListItemIcon } from '@mui/material';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import { setItem, getItem } from '../indexedDB';
-import { useSettings } from '../contexts/SettingsContext';
+import { setItem, getItem } from '../../../services/indexedDB';
+import { useSettings } from '../../../shared/contexts/SettingsContext';
 
 function BudgetList({ userId }) {
   const [budgets, setBudgets] = useState([]);

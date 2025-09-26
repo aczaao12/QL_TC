@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { TextField, Button, Box, Paper, Typography, MenuItem } from '@mui/material';
-import { db } from '../firebase';
+import { db } from '../../../services/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { removeItem } from '../indexedDB';
+import { removeItem } from '../../../services/indexedDB';
 
 function CategoryForm({ userId, showSnackbar }) {
   const [name, setName] = useState('');

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Paper, Typography, TextField, Button, Box, FormControlLabel, Switch } from '@mui/material';
-import { useSettings } from '../contexts/SettingsContext';
+import { useSettings } from '../../../shared/contexts/SettingsContext';
 
 function Settings({ showSnackbar }) {
   const { currencySymbol: contextCurrencySymbol, currencyCode: contextCurrencyCode, useDigitSeparator: contextUseDigitSeparator, saveSettings } = useSettings();

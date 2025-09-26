@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { db } from '../firebase';
+import { db } from '../../../services/firebase';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { Box, Typography, Paper, CircularProgress, Grid, Divider, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
-import { useSettings } from '../contexts/SettingsContext';
+import { useSettings } from '../../../shared/contexts/SettingsContext';
 
 function Reports({ userId, showSnackbar }) {
   const [transactions, setTransactions] = useState([]);

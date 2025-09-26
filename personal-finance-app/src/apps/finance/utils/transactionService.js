@@ -1,6 +1,6 @@
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase';
-import { removeItem } from '../indexedDB';
+import { db } from '../../../services/firebase';
+import { removeItem } from '../../../services/indexedDB';
 
 export async function addTransactionDirectly(userId, transactionData) {
   const { amount, type, category, description, timestamp } = transactionData;

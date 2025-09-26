@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { db } from '../firebase';
+import { db } from '../../../services/firebase';
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { Box, Typography, List, ListItem, ListItemText, Paper, CircularProgress, IconButton, FormControl, InputLabel, Select, MenuItem, ListItemIcon } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import { setItem, getItem } from '../indexedDB';
-import { useSettings } from '../contexts/SettingsContext';
+import { setItem, getItem } from '../../../services/indexedDB';
+import { useSettings } from '../../../shared/contexts/SettingsContext';
 
 function TransactionList({ userId, showSnackbar, onEdit }) {
   const [transactions, setTransactions] = useState([]);

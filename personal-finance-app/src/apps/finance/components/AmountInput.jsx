@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { TextField, InputAdornment, Typography, Box, Chip } from '@mui/material';
-import { useSettings } from '../contexts/SettingsContext';
+import { useSettings } from "../../../shared/contexts/SettingsContext";
 
 function AmountInput({ value, onChange, label, ...props }) {
   const { currencySymbol, useDigitSeparator } = useSettings();

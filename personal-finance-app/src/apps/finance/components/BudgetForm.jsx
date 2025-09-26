@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { TextField, Button, Box, Paper, Typography, MenuItem } from '@mui/material';
 import AmountInput from './AmountInput';
-import { db } from '../firebase';
+import { db } from '../../../services/firebase';
 import { collection, addDoc, serverTimestamp, query, where, onSnapshot } from 'firebase/firestore';
-import { removeItem } from '../indexedDB';
+import { removeItem } from '../../../services/indexedDB';
 
 function BudgetForm({ userId, showSnackbar }) {
   const [category, setCategory] = useState('');

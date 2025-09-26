@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { db } from '../firebase';
+import { db } from '../../../services/firebase';
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { Box, Typography, List, ListItem, ListItemText, Paper, CircularProgress, ListItemIcon } from '@mui/material';
 import CategoryIcon from '@mui/icons-material/Category';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import { setItem, getItem } from '../indexedDB';
+import { setItem, getItem } from '../../../services/indexedDB';
 
 function CategoryList({ userId }) {
   const [categories, setCategories] = useState([]);

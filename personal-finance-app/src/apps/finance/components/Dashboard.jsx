@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { db } from '../firebase';
+import { db } from '../../../services/firebase';
 import { collection, query, where, orderBy, limit, onSnapshot, doc, getDoc, setDoc } from 'firebase/firestore';
 import { Box, Typography, Paper, CircularProgress, Grid, List, ListItem, ListItemText, Divider, Button, TextField } from '@mui/material';
 import AmountInput from './AmountInput';
-import { useSettings } from '../contexts/SettingsContext';
+import { useSettings } from '../../../shared/contexts/SettingsContext';
 import { Link } from 'react-router-dom';
 
 function Dashboard({ userId, showSnackbar }) {

@@ -5,10 +5,10 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 import AmountInput from './AmountInput';
-import { db, app } from '../firebase';
+import { db, app } from '../../../services/firebase';
 import { collection, addDoc, serverTimestamp, updateDoc, doc, getDoc, deleteDoc, Timestamp } from 'firebase/firestore';
 // import { getFunctions, httpsCallable } from 'firebase/functions';
-import { removeItem } from '../indexedDB';
+import { removeItem } from '../../../services/indexedDB';
 import { useParams } from 'react-router-dom';
 
 function AddEditTransaction({ userId, showSnackbar, onTransactionSaved }) {
