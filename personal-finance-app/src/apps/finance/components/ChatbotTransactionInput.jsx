@@ -24,7 +24,6 @@ function ChatbotTransactionInput({ userId, onTransactionAdded }) {
     setLoading(true);
     setError(null);
     setResponse('');
-    setTransactionResult(null);
 
     try {
       const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);

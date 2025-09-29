@@ -25,18 +25,14 @@ import Reports from './components/Reports';
 import Settings from './components/Settings';
 import SettingsIcon from '@mui/icons-material/Settings';
 
-const drawerWidth = 240;
-
 function App() {
   const [user, setUser] = useState(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('info');
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [value, setValue] = useState(0); // For BottomNavigation
   const navigate = useNavigate();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -72,27 +68,23 @@ function App() {
     setSnackbarOpen(false);
   };
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
-
-  const navItems = user ? [
+  const navItems = React.useMemo(() => user ? [
     { name: 'Dashboard', path: '/finance/', icon: <HomeIcon /> },
     { name: 'Transactions', path: '/finance/transactions', icon: <ReceiptLongIcon /> },
     { name: 'Categories', path: '/finance/categories', icon: <CategoryIcon /> },
     { name: 'Budgets', path: '/finance/budgets', icon: <AccountBalanceWalletIcon /> },
     { name: 'Reports', path: '/finance/reports', icon: <AssessmentIcon /> },
     { name: 'Settings', path: '/finance/settings', icon: <SettingsIcon /> },
-  ] : [];
+  ] : [], [user]);
 
   useEffect(() => {
     // Set initial value for BottomNavigation based on current path
     const currentPath = window.location.pathname;
-    const index = navItems.findIndex(item => item.path === currentPath);
-    if (index !== -1) {
-      setValue(index);
+    const foundIndex = navItems.findIndex(item => item.path === currentPath);
+    if (foundIndex !== -1) {
+      setValue(foundIndex);
     }
-  }, [navItems]);
+  }, [navItems, setValue]); // Added setValue to dependencies
 
   const handleTransactionSaved = () => {
     navigate('/finance/transactions'); // Navigate back to transactions list after save
@@ -153,7 +145,7 @@ function App() {
           showLabels
           sx={{ width: '100%', position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1000 }}
         >
-          {navItems.map((item, index) => (
+          {navItems.map((item) => (
             <BottomNavigationAction key={item.name} label={item.name} icon={item.icon} />
           ))}
         </BottomNavigation>

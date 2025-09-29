@@ -6,12 +6,15 @@ import { ThemeProvider } from '@mui/material/styles';
 import theme from './theme';
 
 import { SettingsProvider } from './shared/contexts/SettingsContext';
+import { AuthProvider } from './shared/contexts/AuthContext';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ThemeProvider theme={theme}>
       <SettingsProvider>
-        <App />
+        <AuthProvider>
+          <App />
+        </AuthProvider>
       </SettingsProvider>
     </ThemeProvider>
   </React.StrictMode>,

@@ -5,7 +5,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 import AmountInput from './AmountInput';
-import { db, app } from '../../../services/firebase';
+import { db } from '../../../services/firebase';
 import { collection, addDoc, serverTimestamp, updateDoc, doc, getDoc, deleteDoc, Timestamp } from 'firebase/firestore';
 // import { getFunctions, httpsCallable } from 'firebase/functions';
 import { removeItem } from '../../../services/indexedDB';
@@ -19,8 +19,6 @@ function AddEditTransaction({ userId, showSnackbar, onTransactionSaved }) {
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(dayjs()); // State for the date picker, default to today
   const [error, setError] = useState(null);
-  const [suggestedCategory, setSuggestedCategory] = useState('');
-  const [isSuggesting, setIsSuggesting] = useState(false);
   const [currentTransaction, setCurrentTransaction] = useState(null);
 
   useEffect(() => {
@@ -216,25 +214,6 @@ function AddEditTransaction({ userId, showSnackbar, onTransactionSaved }) {
             onChange={(e) => setDescription(e.target.value)}
             required
           />
-          {isSuggesting && (
-            <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-              Suggesting category...
-            </Typography>
-          )}
-          {suggestedCategory && !isSuggesting && (
-            <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-              <Typography variant="body2" sx={{ mr: 1 }}>
-                Suggested Category: <strong>{suggestedCategory}</strong>
-              </Typography>
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() => setCategory(suggestedCategory)}
-              >
-                Accept
-              </Button>
-            </Box>
-          )}
           {error && (
             <Typography color="error" variant="body2" sx={{ mt: 1 }}>
               {error}
